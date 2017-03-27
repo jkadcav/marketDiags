@@ -1,0 +1,9 @@
+{
+    "path" : "~/Documents/xtrade/marketDiags",
+    "sortOrder" : [
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        }
+    ]
+}
