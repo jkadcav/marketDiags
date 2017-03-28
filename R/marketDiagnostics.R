@@ -1,6 +1,7 @@
 library("RPostgreSQL")
 
 dwConnect<-function(){
+  library("RPostgreSQL")
   dbHost<-"52.64.224.248" # public read replica, only accessible outside DW data center
   dbPort<-8000
   if (!is.na(Sys.getenv("IS_PRODUCTION", NA))) {
@@ -35,6 +36,7 @@ typeAlloc<-function(market){
 #' fetchData(params) where params<-c(market_name,market_name,market_name,dfrom,dto,course,venue_type)
 
 fetchData<-function(params){
+  library("RPostgreSQL")
   markets<-params[1:3]
   dfrom<-as.Date(params[4])
   dto<-as.Date(params[5])
