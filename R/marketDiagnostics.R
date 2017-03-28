@@ -1,16 +1,19 @@
 library(RPostgreSQL)
 
-dbHost<-"52.64.224.248" # public read replica, only accessible outside DW data center
-dbPort<-8000
-if (!is.na(Sys.getenv("IS_PRODUCTION", NA))) {
-  # master, only accessible inside DW data center
-  dbHost<-"dw-staging.cjza6pmqs6im.ap-southeast-2.rds.amazonaws.com"
-  dbPort<-5432
-}
+dwConnect<-function(){
+  dbHost<-"52.64.224.248" # public read replica, only accessible outside DW data center
+  dbPort<-8000
+  if (!is.na(Sys.getenv("IS_PRODUCTION", NA))) {
+    # master, only accessible inside DW data center
+    dbHost<-"dw-staging.cjza6pmqs6im.ap-southeast-2.rds.amazonaws.com"
+    dbPort<-5432
+  }
 
-pg <- dbDriver("PostgreSQL")
-con<-dbConnect(pg, user="betia_staging", password="poT5oT4Ayct0Eef5vin2Arb7owG3oo",
-               host=dbHost, port=dbPort, dbname="dw_staging")
+  pg <- dbDriver("PostgreSQL")
+  con<-dbConnect(pg, user="betia_staging", password="poT5oT4Ayct0Eef5vin2Arb7owG3oo",
+                 host=dbHost, port=dbPort, dbname="dw_staging")
+  return(con)
+}
 
 #' Allocates market type Tote/Fixed
 #'
@@ -31,7 +34,7 @@ typeAlloc<-function(market){
 #' @examples
 #' fetchData(params) where params<-c(market_name,market_name,market_name,dfrom,dto,course,venue_type)
 fetchData<-function(params){
-
+  con<-dwConnect()
   markets<-params[1:3]
   print(markets)
   dfrom<-as.Date(params[4])
