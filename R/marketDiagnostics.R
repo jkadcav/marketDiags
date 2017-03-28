@@ -1,4 +1,4 @@
-library(RPostgreSQL)
+library("RPostgreSQL")
 
 dwConnect<-function(){
   dbHost<-"52.64.224.248" # public read replica, only accessible outside DW data center
