@@ -33,26 +33,26 @@ typeAlloc<-function(market){
 #' @export
 #' @examples
 #' fetchData(params) where params<-c(market_name,market_name,market_name,dfrom,dto,course,venue_type)
+
 fetchData<-function(params){
-  con<-dwConnect()
   markets<-params[1:3]
-  print(markets)
   dfrom<-as.Date(params[4])
   dto<-as.Date(params[5])
   venue<-params[6]
-  print(dfrom)
-  print(venue)
   x<-list()
-
   t1<-typeAlloc(markets[1])
   t2<-typeAlloc(markets[2])
   t3<-typeAlloc(markets[3])
+  country<-params[7]
+  dw<-dwConnect()
 
   x<-dbGetQuery(con,paste("Select meetings.id as meeting_id, events.id as event_id, event_competitors.id as event_competitor_id, competitors.id as competitor_id, trainers.id as trainer_id, venues.name as venue_name, meeting_date, countries.name as country_name, events.number as event_number, competitors.name as competitor_name, trainers.name as trainer_name,event_competitor_race_data.program_number ,event_competitor_race_data.barrier, event_competitor_race_data.finish_position, event_race_data.distance, event_race_data.race_class,
                           venue_types.name as venue_type_name, event_competitor_race_data.scratched as is_scratched,
+
                           (select market_json::json->'prices'->event_competitor_race_data.number-1 from markets where markets.provider = \'",markets[1],"\' and market_name = \'",t1,"\' and markets.meeting_id = meetings.id and markets.event_number = events.number limit 1) as ",markets[1],",
                           (select market_json::json->'prices'->event_competitor_race_data.number-1 from markets where markets.provider = \'",markets[2],"\' and market_name = \'",t2,"\' and markets.meeting_id = meetings.id and markets.event_number = events.number limit 1) as ",markets[2],",
                           (select market_json::json->'prices'->event_competitor_race_data.number-1 from markets where markets.provider = \'",markets[3],"\' and market_name = \'",t3,"\' and markets.meeting_id = meetings.id and markets.event_number = events.number limit 1) as ",markets[3],"
+
                           from meetings
                           left outer join venues on venues.id = meetings.venue_id
                           left outer join countries on countries.id = venues.country_id
@@ -63,7 +63,7 @@ fetchData<-function(params){
                           left outer join event_competitor_race_data on event_competitor_race_data.id = event_competitors.event_competitor_race_datum_id
                           left outer join trainers on trainers.id = event_competitor_race_data.trainer_id
                           left outer join event_race_data on event_race_data.id = events.event_race_datum_id
-                          WHERE venue_types.name = 'THOROUGHBRED' and countries.name = 'Australia' and meeting_date >= \'",dfrom,"\' and meeting_date <= \'",dto,"\' and venues.name = \'",venue,"\' and event_competitor_race_data.scratched = FALSE;",sep=""))
+                          WHERE venue_types.name = 'THOROUGHBRED' and countries.name = \'",country,"\' and meeting_date >= \'",dfrom,"\' and meeting_date <= \'",dto,"\' and venues.name = \'",venue,"\' and event_competitor_race_data.scratched = FALSE;",sep=""))
   return(x)
 }
 
@@ -103,10 +103,21 @@ chiSquareClassic<-function(data,market){
   return(res)
 }
 
+chiCollater<-function(data,params){
+  markets<-params[1:3]
+  total<-length(markets)
 
+  x<-list()
+
+  for(i in 1:total){
+    x[[i]]<-chiSquareClassic(data,markets[i])
+    flush.console()
+  }
+  return(x)
+}
 
 masterDiagnostics<-function(params){
   data<-fetchData(params)
-  res<-chiSquareClassic(data,params[1])
+  res<-chiCollater(data,params)
   return(res)
 }
