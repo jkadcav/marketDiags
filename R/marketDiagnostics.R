@@ -9,8 +9,8 @@ dwConnect<-function(){
     dbPort<-5432
   }
 
-  pg <- dbDriver("PostgreSQL")
-  con<-dbConnect(pg, user="betia_staging", password="poT5oT4Ayct0Eef5vin2Arb7owG3oo",
+  pg <- RPostgreSQL::dbDriver("PostgreSQL")
+  con<-RPostgreSQL::dbConnect(pg, user="betia_staging", password="poT5oT4Ayct0Eef5vin2Arb7owG3oo",
                  host=dbHost, port=dbPort, dbname="dw_staging")
   return(con)
 }
@@ -46,7 +46,7 @@ fetchData<-function(params){
   country<-params[7]
   con<-dwConnect()
 
-  x<-dbGetQuery(con,paste("Select meetings.id as meeting_id, events.id as event_id, event_competitors.id as event_competitor_id, competitors.id as competitor_id, trainers.id as trainer_id, venues.name as venue_name, meeting_date, countries.name as country_name, events.number as event_number, competitors.name as competitor_name, trainers.name as trainer_name,event_competitor_race_data.program_number ,event_competitor_race_data.barrier, event_competitor_race_data.finish_position, event_race_data.distance, event_race_data.race_class,
+  x<-RPostgreSQL::dbGetQuery(con,paste("Select meetings.id as meeting_id, events.id as event_id, event_competitors.id as event_competitor_id, competitors.id as competitor_id, trainers.id as trainer_id, venues.name as venue_name, meeting_date, countries.name as country_name, events.number as event_number, competitors.name as competitor_name, trainers.name as trainer_name,event_competitor_race_data.program_number ,event_competitor_race_data.barrier, event_competitor_race_data.finish_position, event_race_data.distance, event_race_data.race_class,
                           venue_types.name as venue_type_name, event_competitor_race_data.scratched as is_scratched,
 
                           (select market_json::json->'prices'->event_competitor_race_data.number-1 from markets where markets.provider = \'",markets[1],"\' and market_name = \'",t1,"\' and markets.meeting_id = meetings.id and markets.event_number = events.number limit 1) as ",markets[1],",
