@@ -44,7 +44,7 @@ fetchData<-function(params){
   t2<-typeAlloc(markets[2])
   t3<-typeAlloc(markets[3])
   country<-params[7]
-  dw<-dwConnect()
+  con<-dwConnect()
 
   x<-dbGetQuery(con,paste("Select meetings.id as meeting_id, events.id as event_id, event_competitors.id as event_competitor_id, competitors.id as competitor_id, trainers.id as trainer_id, venues.name as venue_name, meeting_date, countries.name as country_name, events.number as event_number, competitors.name as competitor_name, trainers.name as trainer_name,event_competitor_race_data.program_number ,event_competitor_race_data.barrier, event_competitor_race_data.finish_position, event_race_data.distance, event_race_data.race_class,
                           venue_types.name as venue_type_name, event_competitor_race_data.scratched as is_scratched,
