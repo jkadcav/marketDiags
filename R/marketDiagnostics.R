@@ -105,6 +105,23 @@ chiSquareClassic<-function(data,market){
   return(res)
 }
 
+
+
+marketCorrelation<-function(data,market){
+  if(grepl("/",data$meeting_date[1])) data$meeting_date<-as.Date(data$meeting_date,"%d/%m/%Y")
+  data$market_rank<-ave(as.numeric(data[,c(market)]),interaction(data$event_id),FUN=rank)
+  data$market_rank[is.na(data[,c(market)])]<-NA
+  data<-data[is.finite(data$market_rank) & is.finite(data$finish_position),]
+  res<-cor(as.numeric(data$market_rank),as.numeric(data$finish_position))
+  return(res)
+}
+
+
+chiSquareTotal<-function(data){
+  res<-sum(data$Chi,na.rm=T)
+  return(res)
+}
+
 chiCollater<-function(data,params){
   markets<-params[1:3]
   total<-length(markets)
@@ -112,7 +129,9 @@ chiCollater<-function(data,params){
   x<-list()
 
   for(i in 1:total){
-    x[[i]]<-chiSquareClassic(data,markets[i])
+    res<-x$tables[[i]]<-chiSquareClassic(data,markets[i])
+    x$summary$chi[[i]]<-chiSquareTotal(res)
+    x$summary$rsq[[i]]<-marketCorrelation(data,markets[i])
     flush.console()
   }
   return(x)
