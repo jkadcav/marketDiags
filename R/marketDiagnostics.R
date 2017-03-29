@@ -29,7 +29,8 @@ typeAlloc<-function(market){
 }
 
 marketQuery<-function(market){
-  if(market=='xmodel') res<-paste('(select analysis_json::json->\'prices\'->event_competitor_race_data.number-1 from market_analyses where market_analyses.market_name = \'PWIN\' and market_analyses.meeting_id = meetings.id and market_analyses.event_number = events.number limit 1) as ',market,sep="")
+  if(is.na(market)) res<-paste('(select market_json::json->\'prices\'->event_competitor_race_data.number-1 from markets where markets.provider = \'',market,'\' and market_name = \'WIN\' and markets.meeting_id = meetings.id and markets.event_number = events.number limit 1) as ',market,sep="")
+  else if(market=='xmodel') res<-paste('(select analysis_json::json->\'prices\'->event_competitor_race_data.number-1 from market_analyses where market_analyses.market_name = \'PWIN\' and market_analyses.meeting_id = meetings.id and market_analyses.event_number = events.number limit 1) as ',market,sep="")
   else if(grepl('tab',market)) res<-paste('(select market_json::json->\'prices\'->event_competitor_race_data.number-1 from markets where markets.provider = \'',market,'\' and market_name = \'WIN\' and markets.meeting_id = meetings.id and markets.event_number = events.number limit 1) as ',market,sep="")
   else res<-paste('(select market_json::json->\'prices\'->event_competitor_race_data.number-1 from markets where markets.provider = \'',market,'\' and market_name = \'WIN FX\' and markets.meeting_id = meetings.id and markets.event_number = events.number limit 1) as ',market,sep="")
   return(res)
