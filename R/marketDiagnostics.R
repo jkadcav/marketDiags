@@ -81,8 +81,8 @@ chiSquareClassic<-function(data,market){
   lows<-c(0.0000001,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5)
   ups<-c(0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,1)
 
-  res<-as.data.frame(matrix(NA,length(lows),6))
-  colnames(res)<-c('Lower','Upper','N','Act','Exp','Chi')
+  res<-as.data.frame(matrix(NA,length(lows),7))
+  colnames(res)<-c('Lower','Upper','N','W','Act','Exp','Chi')
 
   data[,c(market)]<-as.numeric(data[,c(market)])
   mkt<-as.numeric(data[,c(market)])
@@ -94,11 +94,12 @@ chiSquareClassic<-function(data,market){
     filter<-mkt>=u & mkt<l & is.finite(mkt)
     aa<-data[filter,]
     bb<-aa[aa$finish_position==1,]
-    res$N[i]<-nrow(aa)
-    act<-res$Act[i]<-nrow(bb)
+    total<-res$N[i]<-nrow(aa)
+    w<-res$W[i]<-nrow(bb)
+    act<-res$Act[i]<-w/total
     #market<-
-    exp<-res$Exp[i]<-(1/mean(aa[,c(market)],na.rm=T))*nrow(aa)
-    res$Chi[i]<-((act-exp)^2)/exp
+    exp<-res$Exp[i]<-(1/mean(aa[,c(market)],na.rm=T))
+    res$Chi[i]<-((w-(exp)*total)^2)/(exp*total)
     flush.console()
   }
   res<-res[order(-res$Lower),]
