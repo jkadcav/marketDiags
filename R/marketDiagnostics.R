@@ -78,8 +78,8 @@ fetchData<-function(params){
 #' @examples
 #' chiSquareClassic(data,'tab_vic')
 chiSquareClassic<-function(data,market){
-  lows<-c(0.0000001,0.1,0.2,0.3,0.4,0.5)
-  ups<-c(0.1,0.2,0.3,0.4,0.5,1)
+  lows<-c(0.0000001,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5)
+  ups<-c(0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,1)
 
   res<-as.data.frame(matrix(NA,length(lows),6))
   colnames(res)<-c('Lower','Upper','N','Act','Exp','Chi')
@@ -101,8 +101,10 @@ chiSquareClassic<-function(data,market){
     res$Chi[i]<-((act-exp)^2)/exp
     flush.console()
   }
-  res$Lower<-round(res$Lower,1)
+  res<-res[order(-res$Lower),]
+  res$Lower<-round(res$Lower,2)
   res_chi<-sum(res$Chi,na.rm=T)
+  colnames(res)<-tolower(colnames(res))
   return(res)
 }
 
@@ -121,12 +123,13 @@ marketCorrelation<-function(data,market,type){
 }
 
 chiSquareTotal<-function(data){
-  res<-sum(data$Chi,na.rm=T)
+  res<-sum(data$chi,na.rm=T)
   return(res)
 }
 
 chiCollater<-function(data,params){
   markets<-params[1:3]
+  markets<-markets[!is.na(markets)]
   total<-length(markets)
 
   x<-list()
