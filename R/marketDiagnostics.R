@@ -140,9 +140,13 @@ citibetTable<-function(data,market='host'){
     else filter_ctb<-data$citibet_discount>=low_ctb & data$citibet_discount<up_ctb & is.finite(data$citibet_discount)
 
     aa<-data[filter_odds & filter_ctb,]
-    res$n[i]<-nrow(aa)
+    n<-res$n[i]<-nrow(aa)
     bb<-aa[aa$finish_position==1 & is.finite(aa$finish_position),]
-    res$w[i]<-nrow(bb)
+    w<-res$w[i]<-nrow(bb)
+    e<-res$exp[i]<-(1/mean(aa$citibet_price,na.rm=T))
+    a<-res$act[i]<-w/n
+    res$chi[i]<-((w-(e)*n)^2)/(e*n)
+
     flush.console()
   }
   res$lower_odds<-round(res$lower_odds,2)
@@ -197,6 +201,7 @@ chiSquareClassic<-function(data,market){
 marketCorrelation<-function(data,market,type){
   if(grepl("/",data$meeting_date[1])) data$meeting_date<-as.Date(data$meeting_date,"%d/%m/%Y")
 
+  if(market=='citibet') market<-'citibet_price'
   data$market_rank<-ave(as.numeric(data[,c(market)]),interaction(data$event_id),FUN=rank)
   data$market_rank[is.na(data[,c(market)])]<-NA
   data<-data[is.finite(data$market_rank) & is.finite(data$finish_position),]
