@@ -227,7 +227,7 @@ chiCollater<-function(data,params){
     x$summary$chi[[i]]<-chiSquareTotal(res)
     x$summary$rsq[[i]]<-marketCorrelation(data,markets[i],'pearson')
     x$summary$spearman[[i]]<-marketCorrelation(data,markets[i],'spearman')
-    if(ind==1 & markets[i]=='citibet') x$summary$price_ranges[[i]]<-citibetTable(data)
+    if(ind==1 & markets[i]=='citibet') x$aex[[i]]<-citibetTable(data)
     flush.console()
   }
   return(x)
