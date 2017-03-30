@@ -146,7 +146,8 @@ citibetTable<-function(data,market='host'){
     flush.console()
   }
   res$lower_odds<-round(res$lower_odds,2)
-  res<-dlply(res,~lower_odds)
+  res<-plyr::dlply(res,~lower_odds)
+  res<-rev(res)
   return(res)
 }
 
