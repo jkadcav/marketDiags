@@ -238,6 +238,7 @@ tradeBackTable<-function(data,market_1,market_2){
     roi<-res$roi[i]<-return/outlay
     flush.console
   }
+  colnames(res)<-tolower(colnames(res))
   return(res)
 }
 
