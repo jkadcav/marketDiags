@@ -99,7 +99,7 @@ fetchData<-function(params){
 
 betPay<-function(stake,result,odds){
   if(is.na(stake) | is.na(result) | is.na(odds)) return(NA)
-  else if(result==1) return(stake*odds)
+  else if(result==1) return(stake*(odds-1))
   else return(-stake)
 }
 
@@ -129,7 +129,7 @@ citibetTable<-function(data,market='host'){
   mkt<-as.numeric(data[,c(market)])
   data$citibet_discount<-as.numeric(data$citibet_discount)
   data$citibet_stake<-100/(data$host-1)
-  data$citibet_profit<-mapply(betPay,data$citibet_stake,data$finish_position,mkt)
+  data$citibet_profit<-mapply(betPay,data$citibet_stake,data$finish_position,data$host)
   for(i in 1:nrow(res)){
     up_ctb<-res$upper_ctb[i]
     low_ctb<-res$lower_ctb[i]
@@ -157,6 +157,7 @@ citibetTable<-function(data,market='host'){
   res$lower_odds<-round(res$lower_odds,2)
   res<-plyr::dlply(res,~lower_odds)
   res<-rev(res)
+  write.csv(data,'Test.Data.csv',row.names=F)
   return(res)
 }
 
