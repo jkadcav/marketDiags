@@ -97,9 +97,9 @@ fetchData<-function(params){
   return(x)
 }
 
-betPay<-function(stake,result){
-  if(is.na(stake) | is.na(result)) return(NA)
-  else if(result==1) return(100)
+betPay<-function(stake,result,odds){
+  if(is.na(stake) | is.na(result) | is.na(odds)) return(NA)
+  else if(result==1) return(stake*odds)
   else return(-stake)
 }
 
@@ -129,7 +129,7 @@ citibetTable<-function(data,market='host'){
   mkt<-as.numeric(data[,c(market)])
   data$citibet_discount<-as.numeric(data$citibet_discount)
   data$citibet_stake<-100/(data$host-1)
-  data$citibet_profit<-mapply(betPay,data$citibet_stake,data$finish_position)
+  data$citibet_profit<-mapply(betPay,data$citibet_stake,data$finish_position,mkt)
   for(i in 1:nrow(res)){
     up_ctb<-res$upper_ctb[i]
     low_ctb<-res$lower_ctb[i]
@@ -202,6 +202,46 @@ chiSquareClassic<-function(data,market){
   return(res)
 }
 
+tradeBackTable<-function(data,market_1,market_2){
+  lows<-c(0.0001,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5)
+  ups<-c(0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,1)
+
+  res<-as.data.frame(matrix(NA,length(lows),7))
+  colnames(res)<-c('Lower','Upper','n','w','outlay','return','roi')
+
+
+  mkt<-data[,c(market_1)]<-as.numeric(data[,c(market_1)])
+  data[,c(market_2)]<-as.numeric(data[,c(market_2)])
+
+  if(market_1=='citibet') market_1<-'citibet_price'
+  else if(market_2=='citibet') market_2<-'citibet_price'
+
+  data$market_1_exp<-data[,c(market_2)]/data[,c(market_1)]
+  data$market_1_stake<-100/(data[,c(market_1)]-1)
+  data$market_1_profit<-mapply(betPay,data$market_1_stake,data$finish_position,data[,c(market_2)])
+
+  res$Lower<-lows
+  res$Upper<-ups
+
+  for(i in 1:nrow(res)){
+    u<-(1/res$Upper[i])
+    l<-(1/res$Lower[i])
+    filter<-mkt>=u & mkt<l & is.finite(mkt) & is.finite(data$market_1_exp) & data$market_1_exp>=1.1
+
+    aa<-data[filter,]
+    bb<-aa[aa$finish_position==1 & is.finite(aa$finish_position),]
+
+    n<-res$n[i]<-nrow(aa)
+    w<-res$w[i]<-nrow(bb)
+    outlay<-res$outlay[i]<-sum(aa$market_1_stake,na.rm=T)
+    return<-res$return[i]<-sum(aa$market_1_profit,na.rm=T)+outlay
+    roi<-res$roi[i]<-return/outlay
+    flush.console
+  }
+  return(res)
+}
+
+
 
 marketCorrelation<-function(data,market,type){
   if(grepl("/",data$meeting_date[1])) data$meeting_date<-as.Date(data$meeting_date,"%d/%m/%Y")
@@ -238,6 +278,11 @@ chiCollater<-function(data,params){
     x$summary$rsq[[i]]<-marketCorrelation(data,markets[i],'pearson')
     x$summary$spearman[[i]]<-marketCorrelation(data,markets[i],'spearman')
     if(ind==1 & markets[i]=='citibet') x$aex[[i]]<-citibetTable(data)
+
+    if(i==1) x$trade_back[[i]]<-tradeBackTable(data,markets[i],markets[2])
+    else if(i==2) x$trade_back[[i]]<-tradeBackTable(data,markets[i],markets[1])
+    else if(i==3) next
+
     flush.console()
   }
   return(x)
