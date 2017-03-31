@@ -277,8 +277,10 @@ chiCollater<-function(data,params){
     x$summary$chi[[i]]<-chiSquareTotal(res)
     x$summary$rsq[[i]]<-marketCorrelation(data,markets[i],'pearson')
     x$summary$spearman[[i]]<-marketCorrelation(data,markets[i],'spearman')
+
     if(ind==1 & markets[i]=='citibet') x$aex[[i]]<-citibetTable(data)
 
+    if(length(markets)<2) next
     if(i==1) x$trade_back[[i]]<-tradeBackTable(data,markets[i],markets[2])
     else if(i==2) x$trade_back[[i]]<-tradeBackTable(data,markets[i],markets[1])
     else if(i==3) next
