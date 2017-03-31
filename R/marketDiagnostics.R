@@ -97,6 +97,11 @@ fetchData<-function(params){
   return(x)
 }
 
+betPay<-function(stake,result){
+  if(is.na(stake) | is.na(result)) return(NA)
+  else if(result==1) return(100)
+  else return(-stake)
+}
 
 citibetTable<-function(data,market='host'){
   lows<-c(76,76,80,84,88,92,96)
@@ -123,9 +128,8 @@ citibetTable<-function(data,market='host'){
   data[,c(market)]<-as.numeric(data[,c(market)])
   mkt<-as.numeric(data[,c(market)])
   data$citibet_discount<-as.numeric(data$citibet_discount)
-
-
-
+  data$citibet_stake<-100/(data$host-1)
+  data$citibet_profit<-mapply(betPay,data$citibet_stake,data$finish_position)
   for(i in 1:nrow(res)){
     up_ctb<-res$upper_ctb[i]
     low_ctb<-res$lower_ctb[i]
@@ -145,6 +149,7 @@ citibetTable<-function(data,market='host'){
     w<-res$w[i]<-nrow(bb)
     e<-res$exp[i]<-(1/mean(aa$citibet_price,na.rm=T))
     a<-res$act[i]<-w/n
+    roi<-res$roi[i]<-(sum(aa$citibet_profit,na.rm=T)/sum(aa$citibet_stake,na.rm=T))+1
     res$chi[i]<-((w-(e)*n)^2)/(e*n)
 
     flush.console()
