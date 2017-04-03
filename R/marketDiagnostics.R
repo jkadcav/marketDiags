@@ -103,6 +103,46 @@ betPay<-function(stake,result,odds){
   else return(-stake)
 }
 
+citibetSummarize<-function(data,market='host'){
+  lows<-c(76,76,80,84,88,92,96)
+  ups<-c(76,80,84,88,92,96,100)
+  lows<-rev(lows)
+  ups<-rev(ups)
+
+
+  res<-as.data.frame(matrix(NA,length(lows),3))
+  colnames(res)<-c('lower_ctb','upper_ctb','roi')
+
+
+
+  res$lower_ctb<-lows
+  res$upper_ctb<-ups
+  data[,c(market)]<-as.numeric(data[,c(market)])
+  mkt<-as.numeric(data[,c(market)])
+  data$citibet_discount<-as.numeric(data$citibet_discount)
+  data$citibet_stake<-100/(data$host-1)
+  data$citibet_profit<-mapply(betPay,data$citibet_stake,data$finish_position,data$host)
+
+  for(i in 1:length(lows)){
+    up_ctb<-res$upper_ctb[i]
+    low_ctb<-res$lower_ctb[i]
+
+
+    if(up_ctb==76) filter_ctb<-data$citibet_discount==up_ctb
+    else if(up_ctb==80) filter_ctb<-data$citibet_discount>low_ctb & data$citibet_discount<up_ctb & is.finite(data$citibet_discount)
+    else filter_ctb<-data$citibet_discount>=low_ctb & data$citibet_discount<up_ctb & is.finite(data$citibet_discount)
+
+    aa<-data[filter_ctb,]
+    n<-nrow(aa)
+    bb<-aa[aa$finish_position==1 & is.finite(aa$finish_position),]
+    w<-nrow(bb)
+    e<-(1/mean(aa$citibet_price,na.rm=T))
+    a<-w/n
+    roi<-res$roi[i]<-(sum(aa$citibet_profit,na.rm=T)/sum(aa$citibet_stake,na.rm=T))+1
+  }
+  return(res)
+}
+
 citibetTable<-function(data,market='host'){
   lows<-c(76,76,80,84,88,92,96)
   ups<-c(76,80,84,88,92,96,100)
@@ -141,6 +181,7 @@ citibetTable<-function(data,market='host'){
     filter_odds<-data[,c(market)]>=low_odds & data[,c(market)]<up_odds & is.finite(data[,c(market)])
 
     if(up_ctb==76) filter_ctb<-data$citibet_discount==up_ctb
+    else if(up_ctb==80) filter_ctb<-data$citibet_discount>low_ctb & data$citibet_discount<up_ctb & is.finite(data$citibet_discount)
     else filter_ctb<-data$citibet_discount>=low_ctb & data$citibet_discount<up_ctb & is.finite(data$citibet_discount)
 
     aa<-data[filter_odds & filter_ctb,]
@@ -157,7 +198,6 @@ citibetTable<-function(data,market='host'){
   res$lower_odds<-round(res$lower_odds,2)
   res<-plyr::dlply(res,~lower_odds)
   res<-rev(res)
-  write.csv(data,'Test.Data.csv',row.names=F)
   return(res)
 }
 
@@ -281,7 +321,8 @@ chiCollater<-function(data,params){
     x$summary$rsq[[i]]<-marketCorrelation(data,markets[i],'pearson')
     x$summary$spearman[[i]]<-marketCorrelation(data,markets[i],'spearman')
 
-    if(ind==1 & markets[i]=='citibet') x$aex[[i]]<-citibetTable(data)
+    if(ind==1 & markets[i]=='citibet') aex<-x$aex$data[[i]]<-citibetTable(data)
+    if(ind==1 & markets[i]=='citibet') x$aex$summary[[i]]<-citibetSummarize(data)
 
     if(length(markets)<2) next
     if(i==1) x$trade_back[[i]]<-tradeBackTable(data,markets[i],markets[2])
