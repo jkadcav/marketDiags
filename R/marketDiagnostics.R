@@ -314,9 +314,8 @@ marketCorrelation<-function(data,market,type){
   data$market_rank[is.na(data[,c(market)])]<-NA
   data<-data[is.finite(data$market_rank) & is.finite(data$finish_position),]
 
-  if(type=='pearson') res<-cor(as.numeric(data$finish_position),as.numeric(data[,c(market)]),method='pearson')
+  if(type=='pearson') res<-cor(as.numeric(data$finish_position),as.numeric(data[,c(market)]),method='pearson',use='complete.obs')
   else res<-cor(as.numeric(data$market_rank),as.numeric(data$finish_position),method='spearman')
-
   return(res)
 }
 
