@@ -36,15 +36,22 @@ getHostName<-function(venue_id){
   return(x)
 }
 
-marketQuery<-function(market,ind=0){
+marketQuery<-function(market,type,ind=0){
   if(is.na(market)) res<-paste('(select market_json::json->\'prices\'->event_competitor_race_data.number-1 from markets where markets.provider = \'',market,'\' and market_name = \'WIN\' and markets.meeting_id = meetings.id and markets.event_number = events.number limit 1) as ',market,sep="")
   else if(ind==1) res<-paste('(select market_json::json->\'prices\'->event_competitor_race_data.number-1 from markets where markets.provider = \'',market,'\' and market_name = \'WIN\' and markets.meeting_id = meetings.id and markets.event_number = events.number limit 1) as host',sep="")
   else if(market=='citibet') res<-paste('(select market_json::json->\'available\'->event_competitor_race_data.number::text->0->>2 from markets where markets.provider = \'',market,'\' and market_name = \'EATW\' and markets.meeting_id = meetings.id and markets.event_number = events.number limit 1) as ',market,sep="")
-  else if(grepl('analyst_',market)) res<-paste('coalesce((select analysis_json::json->\'data\'->event_competitor_race_data.number::text->\'win_price\' from market_analyses where market_name = \'',market,'\' and market_analyses.meeting_id = meetings.id and market_analyses.event_number = events.number limit 1),\'{}\') as ',market,sep="")
-  else if(market=='xmodel') res<-paste('(select analysis_json::json->\'prices\'->event_competitor_race_data.number-1 from market_analyses where market_analyses.market_name = \'PWIN\' and market_analyses.meeting_id = meetings.id and market_analyses.event_number = events.number limit 1) as ',market,sep="")
-  else if(grepl('tab',market)) res<-paste('(select market_json::json->\'prices\'->event_competitor_race_data.number-1 from markets where markets.provider = \'',market,'\' and market_name = \'WIN\' and markets.meeting_id = meetings.id and markets.event_number = events.number limit 1) as ',market,sep="")
-  else res<-paste('(select market_json::json->\'prices\'->event_competitor_race_data.number-1 from markets where markets.provider = \'',market,'\' and market_name = \'WIN FX\' and markets.meeting_id = meetings.id and markets.event_number = events.number limit 1) as ',market,sep="")
+  else if(grepl('betia',market)) res<-paste('coalesce((select analysis_json::json->\'data\'->event_competitor_race_data.number::text->\'win_price\' from market_analyses where market_name = \'',type,'\' and market_analyses.meeting_id = meetings.id and market_analyses.event_number = events.number limit 1),\'{}\') as ',market,sep="")
+  else if(type=='BACK' | type=='LAY') res<-paste('(select market_json::json->\'volume_prices\'->event_competitor_race_data.number-1->0->\'price\' from markets where market_name = \'',type,'\' and markets.meeting_id = meetings.id and markets.event_number = events.number limit 1) as ',market,sep="")
+  else if(market=='betfair') res<-paste('(select market_json::json->\'prices\'->event_competitor_race_data.number-1 from markets where market_name = \'',type,'\' and markets.meeting_id = meetings.id and markets.event_number = events.number limit 1) as ',market,sep="")
+  else res<-paste('(select market_json::json->\'prices\'->event_competitor_race_data.number-1 from markets where markets.provider = \'',market,'\' and market_name = \'',type,'\' and markets.meeting_id = meetings.id and markets.event_number = events.number limit 1) as ',market,sep="")
   return(res)
+}
+
+betiaFix<-function(type){
+  if(is.na(type)) return(NA)
+  else if(type=='A1') return('analyst_1')
+  else if(type=='A2') return('analyst_2')
+  else return(type)
 }
 
 #' Fetches data for Market Diagnostics
@@ -64,13 +71,26 @@ fetchData<-function(params){
 
   host<-DBI::dbGetQuery(con, paste("select venues.host_market as host from venues where venues.id = ",venue_id,";",sep=""))[1,1]
 
+  m.1<-unlist(strsplit(params[1],"/"))[1]
+  m.name.1<-unlist(strsplit(params[1],"/"))[2]
+
+  m.name.1<-betiaFix(m.name.1)
+
+  m.2<-unlist(strsplit(params[2],"/"))[1]
+  m.name.2<-unlist(strsplit(params[2],"/"))[2]
+
+  m.name.2<-betiaFix(m.name.2)
+
+  m.3<-unlist(strsplit(params[3],"/"))[1]
+  m.name.3<-unlist(strsplit(params[3],"/"))[2]
+
+  m.name.3<-betiaFix(m.name.3)
+
   x<-list()
-  t1<-marketQuery(markets[1])
-  t2<-marketQuery(markets[2])
-  t3<-marketQuery(markets[3])
-
-  host<-marketQuery(host,1)
-
+  t1<-marketQuery(m.1,m.name.1)
+  t2<-marketQuery(m.2,m.name.2)
+  t3<-marketQuery(m.3,m.name.3)
+  host<-marketQuery(host,'WIN',1)
 
   dbQuery<-paste("Select meetings.id as meeting_id, events.id as event_id, event_competitors.id as event_competitor_id, competitors.id as competitor_id, trainers.id as trainer_id, venues.name as venue_name, meeting_date, countries.name as country_name, events.number as event_number, competitors.name as competitor_name, trainers.name as trainer_name,event_competitor_race_data.program_number ,event_competitor_race_data.barrier, event_competitor_race_data.finish_position, event_race_data.distance, event_race_data.race_class,
                        venue_types.name as venue_type_name, event_competitor_race_data.scratched as is_scratched,
@@ -307,13 +327,16 @@ chiSquareTotal<-function(data){
 
 chiCollater<-function(data,params){
   markets<-params[1:3]
+  markets[1]<-sub('/.*', '', markets[1])
+  markets[2]<-sub('/.*', '', markets[2])
+  markets[3]<-sub('/.*', '', markets[3])
   markets<-markets[!is.na(markets)]
   total<-length(markets)
   ind<-params[length(params)]
   x<-list()
 
-  if('citibet' %in% params) data$citibet_discount<-data$citibet
-  if('citibet' %in% params) data$citibet_price<-(as.numeric(data$host))/(as.numeric(data$citibet)/100)
+  if('citibet' %in% markets) data$citibet_discount<-data$citibet
+  if('citibet' %in% markets) data$citibet_price<-(as.numeric(data$host))/(as.numeric(data$citibet)/100)
 
   for(i in 1:total){
     res<-x$tables[[i]]<-chiSquareClassic(data,markets[i])
