@@ -7,7 +7,7 @@ dwConnect<-function(){
   dbPort<-8000
   if (!is.na(Sys.getenv("IS_PRODUCTION", NA))) {
     # master, only accessible inside DW data center
-    dbHost<-"dw-staging.cjza6pmqs6im.ap-southeast-2.rds.amazonaws.com"
+    dbHost<-"staging.datawarehouse.xtradeiom.com"
     dbPort<-5432
   }
 
